@@ -1,0 +1,16 @@
+[project]
+name = "campus-mcp-server"
+version = "1.0.0"
+description = "MCP server for campus information over Streamable HTTP"
+requires-python = ">=3.11"
+dependencies = [
+    "mcp>=1.27",
+    "psycopg>=3.3",
+    "python-dotenv>=1.0",
+    "uvicorn>=0.29",
+    "starlette>=1.0",
+]
+
+[project.optional-dependencies]
+binary = ["psycopg[binary]>=3.3"]
+c = ["psycopg[c]>=3.3"]

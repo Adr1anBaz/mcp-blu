@@ -1,0 +1,18 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg17
+    container_name: campus_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: campus_user
+      POSTGRES_PASSWORD: campus_password
+      POSTGRES_DB: campus_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - campus_pgdata:/var/lib/postgresql/data
+      - ./db/init/001_init.sql:/docker-entrypoint-initdb.d/01_init.sql
+      - ./db/seeds/001_seed.sql:/docker-entrypoint-initdb.d/02_seed.sql
+
+volumes:
+  campus_pgdata:
