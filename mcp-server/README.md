@@ -68,6 +68,95 @@ curl -X POST http://localhost:8000/mcp \
   -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"1.0"}}}'
 ```
 
+## API usage (for custom agents)
+
+All communication goes through `POST /mcp` using JSON-RPC 2.0. Every request needs these headers:
+
+```
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer <your-token>
+```
+
+### Step 1: Initialize the session
+
+```bash
+curl -X POST http://localhost:8000/mcp \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer <your-token>" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "initialize",
+    "params": {
+      "protocolVersion": "2024-11-05",
+      "capabilities": {},
+      "clientInfo": {"name": "my-agent", "version": "1.0"}
+    }
+  }'
+```
+
+Returns server capabilities and protocol version.
+
+### Step 2: List available tools
+
+```bash
+curl -X POST http://localhost:8000/mcp \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer <your-token>" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 2,
+    "method": "tools/list",
+    "params": {}
+  }'
+```
+
+Returns all tools with their names, descriptions, and input schemas. Cache this response — it won't change unless you restart the server.
+
+### Step 3: Call a tool
+
+```bash
+curl -X POST http://localhost:8000/mcp \
+  -H "Content-Type: application/json" \
+  -H "Accept: application/json" \
+  -H "Authorization: Bearer <your-token>" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 3,
+    "method": "tools/call",
+    "params": {
+      "name": "search_places",
+      "arguments": {"query": "cafetería"}
+    }
+  }'
+```
+
+Returns the tool result in `result.content` (array of content blocks, typically `{"type": "text", "text": "..."}` with JSON inside).
+
+### Other available methods
+
+| Method | Description |
+|--------|-------------|
+| `ping` | Health check — returns `{}` |
+| `notifications/initialized` | Notify server that client finished init (no response) |
+| `resources/list` | List static resources exposed by the server |
+| `resources/read` | Read a specific resource |
+| `prompts/list` | List prompt templates |
+| `prompts/get` | Get a specific prompt template |
+
+### Typical agent flow
+
+```
+initialize → tools/list (cache it) → tools/call (in a loop, as the LLM requests)
+```
+
+Your agent reads the tool list, passes it to the LLM as available functions, and when the LLM decides to call one, you send `tools/call` and feed the result back into the conversation.
+
+---
+
 ## Available tools
 
 - `health_check` — verify DB connectivity
