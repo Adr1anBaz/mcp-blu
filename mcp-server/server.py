@@ -175,7 +175,10 @@ def list_places(place_type: Optional[str] = None) -> list[dict]:
 @mcp.tool()
 def search_places(query: str) -> list[dict]:
     """
-    Search places by name, description, type, room code, building name or metadata.
+    Search places by name, description, type, room code, building name,
+    metadata, or room equipment (e.g. "proyector 4K", "VICON", "RTX 4090",
+    "workstations", "motion capture"). For classroom/lab types the result
+    includes room_equipment and room_type.
     """
     pattern = f"%{query}%"
 
@@ -190,9 +193,13 @@ def search_places(query: str) -> list[dict]:
             p.room_code,
             p.status,
             p.metadata,
-            b.name AS building_name
+            b.name AS building_name,
+            rp.equipment AS room_equipment,
+            rp.room_type,
+            rp.capacity
         FROM places p
         LEFT JOIN buildings b ON b.id = p.building_id
+        LEFT JOIN room_profiles rp ON rp.place_id = p.id
         WHERE
             p.name ILIKE %s
             OR p.description ILIKE %s
@@ -200,10 +207,11 @@ def search_places(query: str) -> list[dict]:
             OR p.room_code ILIKE %s
             OR p.metadata::text ILIKE %s
             OR b.name ILIKE %s
+            OR rp.equipment::text ILIKE %s
         ORDER BY p.name
         LIMIT 20;
         """,
-        (pattern, pattern, pattern, pattern, pattern, pattern),
+        (pattern, pattern, pattern, pattern, pattern, pattern, pattern),
     )
 
 
@@ -211,7 +219,10 @@ def search_places(query: str) -> list[dict]:
 def get_place_detail(place_id: str) -> dict:
     """
     Get detailed information about a place using its place_id.
-    Includes opening hours and type-specific profile when available.
+    Includes opening hours, schedule exceptions and type-specific profile.
+    For classroom and lab types it also returns room_events (upcoming
+    classes, exams and maintenance) so the agent can reason about
+    availability and class schedules.
     """
     places = query_db(
         """
@@ -265,6 +276,25 @@ def get_place_detail(place_id: str) -> dict:
     elif place_type in ("classroom", "lab"):
         result["room_profile"] = query_db(
             "SELECT * FROM room_profiles WHERE place_id = %s;",
+            (place_id,),
+        )
+        result["room_events"] = query_db(
+            """
+            SELECT
+                id,
+                title,
+                event_type,
+                starts_at,
+                ends_at,
+                recurrence_rule,
+                source,
+                notes
+            FROM room_events
+            WHERE place_id = %s
+              AND starts_at >= NOW() - INTERVAL '1 day'
+            ORDER BY starts_at
+            LIMIT 50;
+            """,
             (place_id,),
         )
 
