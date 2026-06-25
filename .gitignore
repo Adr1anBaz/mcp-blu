@@ -1,1 +1,4 @@
 .claude/
+.env
+mcp-server/.env
+__pycache__/
