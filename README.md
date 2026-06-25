@@ -1,64 +1,96 @@
 # campus-db
 
-Sistema local que expone informacion de un campus universitario (lugares, restaurantes, tiendas, puertas, laboratorios) a traves de un **MCP server** (Model Context Protocol). Permite que un LLM (como Claude) consulte la base de datos en tiempo real usando tools.
+Sistema local que expone info del campus (lugares, restaurantes, tiendas, puertas, labs) via **MCP server** (puerto 8000) y expone un **route server con Dijkstra** sobre el grafo de navegacion (puerto 8001). Ambos usan el mismo `MCP_BEARER_TOKEN`.
 
-La base de datos tambien incluye un **grafo de navegacion** pensado para alimentar un robot que se mueve por el campus.
-
-**Stack:**
-- PostgreSQL 17 + pgvector (Docker)
-- Python MCP server (FastMCP + psycopg)
-- Docker Compose para la base de datos
-
----
-
-## Estructura del proyecto
-
-```
-campus-db/
-├── docker-compose.yml          # Levanta PostgreSQL con pgvector
-├── db/
-│   ├── init/001_init.sql       # Schema completo (se ejecuta al crear el container)
-│   └── seeds/001_seed.sql      # Datos de prueba
-├── mcp-server/
-│   ├── server.py               # MCP server con todos los tools
-│   ├── .env                    # DATABASE_URL
-│   └── .venv/                  # Virtual environment Python
-└── DATABASE_OVERVIEW.md        # Documentacion del modelo de datos
-```
+**Servicios:**
+| Servicio | Puerto | Auth |
+|----------|--------|------|
+| PostgreSQL + pgvector | 5432 | `campus_user` / `campus_password` |
+| MCP server | 8000 | `Bearer MCP_BEARER_TOKEN` (en `/mcp`) |
+| Route server (Dijkstra) | 8001 | `Bearer MCP_BEARER_TOKEN` (en `/route`) |
 
 ---
 
-## Setup completo (desde cero)
+## Fast deploy
+
+### 1. Variables de entorno
 
 ```bash
-# 1. Levantar PostgreSQL con schema + seed (automatico)
-docker compose up -d
-
-# 2. Levantar el MCP server
-cd mcp-server
-cp .env.example .env        # editar si cambias credenciales o token
-uv run server.py            # o: pip install -r requirements.txt && python server.py
+cp .env.example .env
+cp mcp-server/.env.example mcp-server/.env
 ```
 
-Listo. El MCP server queda en `http://0.0.0.0:8000/mcp`.
+Editar ambos `.env` con el mismo `MCP_BEARER_TOKEN`. Defaults:
 
-### Base de datos
+```
+DATABASE_URL=postgresql://campus_user:campus_password@localhost:5432/campus_db
+MCP_BEARER_TOKEN=change-me-to-a-random-secret
+ROUTE_SERVER_PORT=8001
+```
 
-Docker Compose levanta PostgreSQL en `localhost:5432` con:
-- **User:** `campus_user`
-- **Password:** `campus_password`
-- **Database:** `campus_db`
+### 2. Levantar PostgreSQL
 
-El schema y seed se ejecutan automaticamente la primera vez que se crea el container.
+```bash
+docker compose up -d
+```
+
+Schema (`db/init/001_init.sql`) y seed (`db/seeds/001_seed.sql`) corren automaticamente la primera vez.
 
 ```bash
 docker compose down        # mantiene datos
-docker compose down -v     # borra todo y empieza de cero
+docker compose down -v     # borra todo
 ```
 
-### Conectar a Claude Code como MCP tool
+### 3. Encender MCP server (tools para LLMs)
 
-Agregar en tu configuracion de Claude Code (via `claude mcp add` o en `.claude.json`):
+**uv (recomendado):**
+```bash
+cd mcp-server
+uv run server.py
+```
+
+**pip:**
+```bash
+cd mcp-server
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+python server.py
+```
+
+**Docker:**
+```bash
+cd mcp-server
+docker build -t campus-mcp .
+docker run --env-file .env -p 8000:8000 campus-mcp
+```
+
+Queda en `http://0.0.0.0:8000/mcp`.
+
+### 4. Encender route server (Dijkstra HTTP)
+
+Lee el grafo de `navigation_nodes` + `navigation_edges` (peso = `distance_meters`), resuelve origen/destino por su nodo `front_door`, y devuelve secuencia de `route_segments`.
+
+**uv (recomendado):**
+```bash
+uv run route_server.py
+```
+
+**pip:**
+```bash
+python -m venv .venv && source .venv/bin/activate
+pip install -r mcp-server/requirements.txt
+python route_server.py
+```
+
+Queda en `http://0.0.0.0:8001`.
+
+---
+
+## Uso
+
+### MCP server (tools)
+
+En `.claude.json` o via `claude mcp add`:
 
 ```json
 {
@@ -66,113 +98,80 @@ Agregar en tu configuracion de Claude Code (via `claude mcp add` o en `.claude.j
     "campus-db": {
       "type": "streamable-http",
       "url": "http://<server-ip>:8000/mcp",
-      "headers": {
-        "Authorization": "Bearer <tu-MCP_BEARER_TOKEN>"
-      }
+      "headers": { "Authorization": "Bearer <MCP_BEARER_TOKEN>" }
     }
   }
 }
 ```
 
----
+Tools disponibles: `health_check`, `database_summary`, `list_places`, `search_places`, `get_place_detail`, `get_place_detail_by_name`, `get_restaurant_menu`, `get_restaurant_menu_by_name`, `search_food`, `get_store_products`, `search_products`, `find_office_by_need`, `get_gates`, `search_semantic_documents`, `get_current_crowd_levels`.
 
-## Tools disponibles (MCP)
+### Route server (Dijkstra)
 
-| Tool | Que hace |
-|------|----------|
-| `health_check` | Verifica conexion a la DB |
-| `database_summary` | Resumen: total de places y conteo por tipo |
-| `list_places` | Lista lugares, opcionalmente filtrados por tipo |
-| `search_places` | Busca por nombre, descripcion, tipo, room code, edificio |
-| `get_place_detail` | Detalle completo de un lugar por UUID |
-| `get_place_detail_by_name` | Detalle completo buscando por nombre |
-| `get_restaurant_menu` | Menu de un restaurante por UUID |
-| `get_restaurant_menu_by_name` | Menu buscando por nombre del restaurante |
-| `search_food` | Busca items de menu, con filtro de precio opcional |
-| `get_store_products` | Productos de una tienda por UUID |
-| `search_products` | Busca productos, con filtro de precio opcional |
-| `find_office_by_need` | Busca oficinas/departamentos por servicio o proposito |
-| `get_gates` | Lista puertas con permisos de entrada/salida |
-| `search_semantic_documents` | Busca en documentos semanticos (lexical por ahora) |
-| `get_current_crowd_levels` | Niveles de afluencia mas recientes por lugar |
-
----
-
-## Como agregar un nuevo tool
-
-Editar `mcp-server/server.py`. El patron es:
-
-```python
-@mcp.tool()
-def mi_nuevo_tool(param1: str, param2: Optional[int] = None) -> list[dict]:
-    """
-    Descripcion que el LLM ve para decidir cuando usar este tool.
-    """
-    return query_db(
-        "SELECT ... FROM ... WHERE ... ILIKE %s LIMIT 20;",
-        (f"%{param1}%",),
-    )
-```
-
-**Reglas:**
-1. Decorar con `@mcp.tool()`
-2. El docstring es la descripcion que ve el LLM — hacerlo claro y util
-3. Usar `query_db()` para consultas read-only (ya esta configurado con `SET TRANSACTION READ ONLY`)
-4. Los tipos de retorno se serializan automaticamente gracias a `normalize()`
-5. Reiniciar el server despues de agregar tools
-
----
-
-## Como agregar datos a la base
-
-### Opcion A: Agregar un nuevo archivo SQL seed
-
-Crear `db/seeds/002_mi_data.sql` y ejecutar:
 ```bash
-docker exec -i campus_postgres psql -U campus_user -d campus_db < db/seeds/002_mi_data.sql
+# Health (sin auth)
+curl http://localhost:8001/health
+
+# Ruta entre dos places (place_id = UUID)
+curl "http://localhost:8001/route?origin=<uuid>&destination=<uuid>" \
+  -H "Authorization: Bearer $MCP_BEARER_TOKEN"
 ```
 
-### Opcion B: Modificar el schema
+Respuesta:
 
-Editar `db/init/001_init.sql` (solo aplica al recrear el container desde cero con `docker compose down -v && docker compose up -d`).
+```json
+{
+  "nodes_ordered": ["nodo A", "nodo B", "nodo C"],
+  "route_files":   ["a_to_b.csv", "b_to_c.csv"],
+  "total_distance_m": 47.30
+}
+```
 
-Para cambios incrementales en una DB existente, correr el ALTER/CREATE directamente:
+Errores: `400` faltan params · `401` token invalido · `404` sin ruta o place sin nodo `front_door`.
+
+### CLI Dijkstra (one-shot)
+
 ```bash
-docker exec -i campus_postgres psql -U campus_user -d campus_db -c "ALTER TABLE ..."
+python dijkstra_demo.py <place_id_origen> <place_id_destino>
+```
+
+Imprime el mismo JSON que el endpoint `/route`.
+
+---
+
+## Estructura
+
+```
+campus-db/
+├── docker-compose.yml
+├── db/
+│   ├── init/001_init.sql       # schema
+│   └── seeds/001_seed.sql      # datos de prueba
+├── mcp-server/
+│   ├── server.py               # MCP server (tools)
+│   ├── .env
+│   └── .venv/
+├── route_server.py             # HTTP Dijkstra server (puerto 8001)
+├── dijkstra_demo.py            # CLI Dijkstra
+├── .env / .env.example
+├── schema.md                   # modelo de datos
+└── docs/GRAFO_FUNCIONAMIENTO.md
 ```
 
 ---
 
-## Modelo de datos (resumen)
-
-```
-campuses -> buildings -> places (tabla central)
-                           ├── opening_hours
-                           ├── schedule_exceptions
-                           ├── restaurant_profiles -> menus -> menu_items
-                           ├── store_profiles -> products
-                           ├── room_profiles -> room_events
-                           ├── office_profiles
-                           ├── gate_profiles
-                           └── crowd_levels
-
-places <-> navigation_nodes <-> navigation_edges -> route_segments
-                                                     (para robot)
-
-semantic_documents (embeddings con pgvector, busqueda lexical por ahora)
-```
-
-Tipos de place: `restaurant`, `classroom`, `lab`, `store`, `office`, `department`, `gate`, `common_area`.
-
----
-
-## Conexion directa a la DB (debugging)
+## Conexion directa a DB (debug)
 
 ```bash
 docker exec -it campus_postgres psql -U campus_user -d campus_db
 ```
 
-O desde tu maquina:
-```bash
-psql postgresql://campus_user:campus_password@localhost:5432/campus_db
+Ver grafo:
+
+```sql
+SELECT fn.name AS desde, tn.name AS hasta, ne.distance_meters
+FROM navigation_edges ne
+JOIN navigation_nodes fn ON fn.id = ne.from_node_id
+JOIN navigation_nodes tn ON tn.id = ne.to_node_id
+WHERE ne.status = 'active';
 ```
