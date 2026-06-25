@@ -1,29 +1,67 @@
 """
-Dijkstra determinista para los 3 salones del Edificio L.
+Dijkstra sobre el grafo real de navegacion (lee de PostgreSQL).
 
-Grafo hardcodeado (4 aristas, todas bidireccionales):
-  Pasillo Salon L <-> L-A   20.0 m   (hallway)
-  Pasillo Salon L <-> L-B    8.0 m   (hallway)
-  Pasillo Salon L <-> L-C   14.0 m   (hallway)
-  L-B         <-> L-C        0.5 m   (door)
+Uso:
+  python dijkstra_demo.py <origen_place_id> <destino_place_id>
 
-Uso:  python dijkstra_demo.py
+Los argumentos son place_id (UUID) de la tabla `places`.
+Para cada lugar, se toma su nodo de entrada (role = 'front_door')
+y se corre Dijkstra entre ambos nodos.
 """
 
 import heapq
+import os
+import sys
+from pathlib import Path
 
-NODES = ["Pasillo", "L-A", "L-B", "L-C"]
+import psycopg
+from dotenv import load_dotenv
+from psycopg.rows import dict_row
 
-EDGES = [
-    ("Pasillo", "L-A", 20.0, "hallway"),
-    ("Pasillo", "L-B",  8.0, "hallway"),
-    ("Pasillo", "L-C", 14.0, "hallway"),
-    ("L-B",     "L-C",  0.5, "door"),
-]
+load_dotenv(Path(__file__).parent / "mcp-server" / ".env")
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+
+def place_to_node(place_id):
+    with psycopg.connect(DATABASE_URL, row_factory=dict_row) as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT p.name AS place_name, nn.name AS node_name
+                FROM places p
+                JOIN place_navigation_nodes pnn ON pnn.place_id = p.id
+                JOIN navigation_nodes nn ON nn.id = pnn.navigation_node_id
+                WHERE p.id = %s AND pnn.role = 'front_door';
+                """,
+                (place_id,),
+            )
+            row = cur.fetchone()
+    if not row:
+        sys.exit(f"Error: lugar {place_id} no existe o no tiene nodo front_door")
+    return row["place_name"], row["node_name"]
+
+
+def load_graph():
+    graph = {}
+    with psycopg.connect(DATABASE_URL, row_factory=dict_row) as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                SELECT fn.name AS a, tn.name AS b, ne.distance_meters AS w
+                FROM navigation_edges ne
+                JOIN navigation_nodes fn ON fn.id = ne.from_node_id
+                JOIN navigation_nodes tn ON tn.id = ne.to_node_id
+                WHERE ne.status = 'active';
+                """
+            )
+            for row in cur.fetchall():
+                a, b, w = row["a"], row["b"], float(row["w"])
+                graph.setdefault(a, []).append((b, w))
+                graph.setdefault(b, []).append((a, w))
+    return graph
 
 
 def dijkstra(graph, start):
-    """Shortest-path tree desde `start`. Devuelve (dist, prev)."""
     dist = {n: float("inf") for n in graph}
     prev = {n: None for n in graph}
     dist[start] = 0.0
@@ -41,8 +79,7 @@ def dijkstra(graph, start):
     return dist, prev
 
 
-def path(prev, start, end):
-    """Reconstruye la lista de nodos del camino mas corto de start a end."""
+def reconstruct(prev, start, end):
     out, cur = [], end
     while cur is not None:
         out.append(cur)
@@ -51,25 +88,25 @@ def path(prev, start, end):
 
 
 def main():
-    # Lista de adyacencia: nodo -> [(vecino, peso), ...]
-    graph = {n: [] for n in NODES}
-    for a, b, w, _ in EDGES:
-        graph[a].append((b, w))
-        graph[b].append((a, w))
+    if len(sys.argv) != 3:
+        sys.exit("Uso: python dijkstra_demo.py <origen_place_id> <destino_place_id>")
 
-    print("=== Dijkstra: 3 salones del Edificio L ===\n")
+    origin_id, dest_id = sys.argv[1], sys.argv[2]
+    origin_place, origin_node = place_to_node(origin_id)
+    dest_place, dest_node = place_to_node(dest_id)
 
-    # 1) Desde el Pasillo (punto de partida natural del robot)
-    dist, prev = dijkstra(graph, "Pasillo")
-    print("Distancias desde Pasillo Salon L:")
-    for target in ("L-A", "L-B", "L-C"):
-        print(f"  Pasillo -> {target:5s}  {dist[target]:5.1f} m   via {' -> '.join(path(prev, 'Pasillo', target))}")
+    graph = load_graph()
+    dist, prev = dijkstra(graph, origin_node)
+    route = reconstruct(prev, origin_node, dest_node)
 
-    # 2) Pares salon-a-salon (3 unicos porque el grafo es no-dirigido)
-    print("\nPares salon-a-salon:")
-    for a, b in (("L-A", "L-B"), ("L-A", "L-C"), ("L-B", "L-C")):
-        d, p = dijkstra(graph, a)
-        print(f"  {a} -> {b}    {d[b]:5.1f} m   via {' -> '.join(path(p, a, b))}")
+    if not route:
+        sys.exit(f"Sin ruta entre {origin_node} y {dest_node}")
+
+    print(f"Origen:  {origin_place}  ({origin_node})")
+    print(f"Destino: {dest_place}  ({dest_node})")
+    print(f"\nRuta optima ({dist[dest_node]:.1f} m, {len(route)} nodos):")
+    for i, node in enumerate(route):
+        print(f"  {i}. {node}")
 
 
 if __name__ == "__main__":
