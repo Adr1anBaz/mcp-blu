@@ -217,14 +217,14 @@ VALUES
 
 -- Navigation edges
 INSERT INTO navigation_edges (
-  id, from_node_id, to_node_id, duration_seconds, bidirectional, edge_type, status
+  id, from_node_id, to_node_id, distance_meters, bidirectional, edge_type, status
 )
 VALUES
 (
   '00000000-0000-0000-0000-000000004001',
   '00000000-0000-0000-0000-000000003001',
   '00000000-0000-0000-0000-000000003002',
-  35,
+  5.00,
   true,
   'hallway',
   'active'
@@ -233,7 +233,7 @@ VALUES
   '00000000-0000-0000-0000-000000004002',
   '00000000-0000-0000-0000-000000003002',
   '00000000-0000-0000-0000-000000003003',
-  90,
+  15.00,
   true,
   'walk',
   'active'

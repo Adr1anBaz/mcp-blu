@@ -292,7 +292,7 @@ CREATE TABLE navigation_edges (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     from_node_id UUID NOT NULL REFERENCES navigation_nodes(id) ON DELETE CASCADE,
     to_node_id UUID NOT NULL REFERENCES navigation_nodes(id) ON DELETE CASCADE,
-    duration_seconds INT NOT NULL CHECK (duration_seconds > 0),
+    distance_meters NUMERIC(6,2) NOT NULL CHECK (distance_meters > 0),
     bidirectional BOOLEAN DEFAULT FALSE,
     edge_type TEXT CHECK (
         edge_type IN (

@@ -857,16 +857,16 @@ restricted
 El campo más importante para Dijkstra es:
 
 ```txt
-duration_seconds
+distance_meters
 ```
 
-Ese es el peso de la conexión.
+Ese es el peso de la conexión (distancia en metros entre los dos nodos).
 
 Ejemplo:
 
 ```txt
 Nodo frente a Laboratorio L → Nodo pasillo Laboratorio L
-duration_seconds: 35
+distance_meters: 5.00
 ```
 
 ---

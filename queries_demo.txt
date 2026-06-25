@@ -1,0 +1,312 @@
+================================================================================
+CONSULTAS DE PRUEBA - AGENTE MCP CAMPUS-DB
+================================================================================
+
+Una vez que cargues el seed 002_rich_seed.sql tendras:
+  - 8 restaurantes (mexicana, japonesa, china, italiana, vegetariana, fonda, cafe, sandwiches)
+  - 8 oficinas de profesores (Control Clasico, Control Avanzado, Robotica, Circuitos Digitales,
+    Sistemas Embebidos, Inteligencia Artificial, Microcontroladores, Vision por Computadora)
+  - 3 oficinas administrativas (Servicios Escolares, Becas, Biblioteca)
+  - 7 salones y laboratorios
+  - 2 tiendas con ~20 productos
+  - 3 areas comunes
+  - 1 periodo academico activo (Otono 2026)
+  - 28 sesiones de clase, examenes y mantenimiento
+  - 10 niveles de afluencia
+  - 7 nodos y aristas de navegacion adicionales
+
+Carga el seed con:
+  docker exec -i campus_postgres psql -U campus_user -d campus_db < db/seeds/002_rich_seed.sql
+
+================================================================================
+1. INFORMACION GENERAL DEL CAMPUS
+================================================================================
+
+- Dame un resumen de la base de datos: cuantos lugares hay y cuantos por tipo.
+- Hay conexion a la base de datos?
+- Cuantos restaurantes hay en el campus?
+- Cuantas oficinas de profesores existen?
+- Listame todos los lugares del campus.
+- Cuales son todas las areas comunes disponibles?
+
+================================================================================
+2. RESTAURANTES Y COMIDA
+================================================================================
+
+Busqueda por nombre / tipo
+- Que restaurantes mexicanos hay?
+- Tienes informacion de Sushi Nagoya?
+- Dame el menu de Dragon Dorado.
+- Muestrame el menu del Cafe Borrego.
+- Cual es el menu de La Bella Italia?
+- Que opciones vegetarianas o veganas hay?
+- Cual es el restaurante mas economico?
+- Que restaurantes estan abiertos el sabado?
+
+Busqueda de platillos
+- Que opciones de sushi tienes?
+- Hay ramen en el campus?
+- Buscame algo picante.
+- Quiero algo con cafe, que opciones hay?
+- Que desayunos hay?
+- Tienes algo sin gluten?
+- Buscame una pizza.
+- Quiero un sandwich, que opciones tienes?
+- Que postres hay disponibles?
+- Hay tamales en el campus?
+- Buscame un menu de comida corrida.
+
+Busqueda con filtro de precio
+- Que puedo comer por menos de 50 pesos?
+- Buscame cafes por menos de 70 pesos.
+- Que desayunos hay por menos de 100 pesos?
+- Encuentrame pizzas por menos de 200 pesos.
+- Quiero comer sushi por menos de 200 pesos.
+- Dame opciones vegetarianas por menos de 120 pesos.
+
+Comparaciones
+- Cual es mas barato: Tacos Don Julio o El Rincon del Sabor?
+- Que restaurante de comida mexicana me recomiendas, Don Julio o Rincon del Sabor?
+- Tacos Don Julio acepta tarjeta?
+- Que metodos de pago acepta Green Bowl?
+- Cual es el precio promedio de Sushi Nagoya?
+
+================================================================================
+3. AFLUENCIA Y HORARIOS
+================================================================================
+
+- Cual es el restaurante menos lleno en este momento?
+- Que restaurante tiene mas gente ahora?
+- Dame los niveles de afluencia actuales.
+- A que hora abre Cafe Borrego?
+- A que hora cierra La Bella Italia los viernes?
+- Tacos Don Julio abre los domingos?
+- Cual es el mejor horario para ir a Dragon Dorado sin esperar tanto?
+
+================================================================================
+4. OFICINAS Y PROFESORES (find_office_by_need)
+================================================================================
+
+Por materia / area
+- Donde puedo encontrar al profesor de Control Clasico?
+- Quien imparte Control Avanzado?
+- Necesito asesoria de Robotica, donde esta el profesor?
+- Quien da Circuitos Digitales?
+- Cual es la oficina del profesor de Sistemas Embebidos?
+- Quien enseña Inteligencia Artificial?
+- Necesito ayuda con Microcontroladores, donde lo encuentro?
+- Quien imparte Vision por Computadora?
+
+Por necesidad / tramite
+- Donde puedo hacer tramites de inscripcion?
+- Necesito una constancia de estudios, donde la solicito?
+- Como pido una beca?
+- Donde resuelvo temas de pagos?
+- A donde voy si tengo un problema con mi kardex?
+- Donde puedo renovar mi credencial?
+- Quiero reservar un cubiculo en la biblioteca, donde pido la reservacion?
+- Quien me puede orientar para cambiarme de horario?
+
+Datos de contacto
+- Cual es el correo del Dr. Roberto Sanchez?
+- Cual es la extension de la oficina de la Dra. Maria Gonzalez?
+- A que oficina puedo ir para hablar sobre proyectos terminales de Robotica?
+- Cual es la pagina web de la Dra. Patricia Ruiz?
+- Cual es el telefono de la oficina de Microcontroladores?
+
+================================================================================
+5. SALONES, LABORATORIOS Y CLASES
+================================================================================
+
+Informacion de espacios
+- Que laboratorios tiene el Edificio A?
+- Donde esta el Salon A-201?
+- Que capacidad tiene el Lab de Robotica?
+- Que equipos tiene el Laboratorio de Circuitos?
+- Cual es el salon mas grande?
+- Hay salones con tomas electricas para laptop?
+- Que salones se pueden reservar?
+
+Sobre clases y horarios
+- En que salon se imparte Control Clasico?
+- Cual es el horario de Robotica?
+- Que dias se da Control Avanzado?
+- Quien imparte Microcontroladores y en que salon?
+- Donde se imparte Inteligencia Artificial?
+- Cual es el horario de Sistemas Embebidos?
+- A que hora es la clase de Vision por Computadora?
+- Que clase hay el viernes en el Lab de Circuitos?
+- Cual es el siguiente examen parcial de Control Clasico?
+- Hay alguna clase en mantenimiento en el Lab de Control?
+
+================================================================================
+6. PRODUCTOS Y TIENDAS
+================================================================================
+
+- Que tiendas hay en el campus?
+- Cuales son los productos de la Papeleria Campus?
+- Venden calculadoras graficadoras en la papeleria?
+- Cuanto cuesta la calculadora CASIO fx-991?
+- Hay USB disponibles en el campus?
+- Cuales son los precios de los cuadernos?
+- Donde puedo comprar una libreta profesional?
+- Que articulos de higiene puedo conseguir en la tienda?
+- Tienen audifonos en venta?
+- Buscame un cargador USB-C.
+- Que bebidas energeticas hay?
+- Hay cafe soluble disponible?
+
+================================================================================
+7. ESPACIOS DE ESTUDIO Y AREAS COMUNES
+================================================================================
+
+- Donde puedo estudiar en silencio?
+- Hay salas de estudio grupal?
+- Cual es la capacidad de la Sala Silenciosa?
+- La Sala Atrium se puede reservar?
+- Hay espacios al aire libre?
+- Donde puedo sentarme a trabajar entre clases?
+
+================================================================================
+8. BUSQUEDA SEMANTICA (no solo por palabras exactas)
+================================================================================
+
+Estas consultas prueban busqueda semantica, idealmente deberian encontrar el
+lugar correcto aunque la palabra no coincida literalmente.
+
+- Buscame un lugar tranquilo para trabajar.
+- Necesito un sitio para hacer practicas de robotica.
+- Donde puedo comer barato?
+- Quiero un cafe con wifi.
+- Necesito cargar mi laptop, donde encuentro tomacorrientes?
+- Buscame un lugar para concentrarme.
+- Donde puedo estudiar sin ruido?
+- Cual es el mejor lugar para una cena romantica?
+- Quiero hacer un trabajo en equipo, donde nos recomiendan?
+- Necesito un lugar para comer rapido entre clases.
+- Donde hay opciones saludables?
+
+================================================================================
+9. PUERTAS Y ACCESOS
+================================================================================
+
+- Cuales son las puertas del campus?
+- Que puertas permiten entrada y salida?
+- Como llego a la Puerta 10?
+- La Puerta 10 requiere credencial?
+- Que calles estan cerca del campus?
+
+================================================================================
+10. RUTAS Y NAVEGACION
+================================================================================
+
+- Como llego del Laboratorio L a Giornale?
+- Cual es la ruta del Edificio A a la Biblioteca?
+- Cuanto tardo en llegar a la zona de comida desde el Edificio B?
+- Que camino tomo para ir del Lab de Robotica a la Biblioteca?
+- Hay ruta entre el Centro de Investigacion y la zona de comida?
+
+================================================================================
+11. CONSULTAS COMBINADAS / AVANZADAS
+================================================================================
+
+- Estoy en el Lab de Robotica, quiero comer sushi y despues ir a la Biblioteca. Como le hago?
+- Necesito una oficina donde me puedan orientar sobre Control Clasico y ademas quiero comer algo economico cerca.
+- Muestrame el menu del Cafe Borrego y dime que lugares hay cerca (oficinas y salones).
+- Quiero algo de comer y un cuaderno, donde puedo conseguir ambos?
+- Tengo hambre de algo japones y luego quiero ir a un salon a estudiar.
+- Buscame un profesor que de clases en el salon A-201.
+
+================================================================================
+12. CONSULTAS QUE EL AGENTE NO PUEDE RESPONDER (LIMITACIONES ACTUALES)
+================================================================================
+
+Sirven para identificar gaps en los tools del MCP. Si las necesitas, considera
+agregar un tool nuevo siguiendo el patron documentado en mcp-server/server.py:
+
+- Que clases hay hoy? (no hay tool que liste room_events por fecha)
+- En que salon estoy libre a las 14:00? (no hay tool de disponibilidad)
+- Dame la ruta de A a B paso a paso para el robot (no hay Dijkstra expuesto)
+- Cual es la mejor ruta caminando del Lab de Robotica a Sushi Nagoya?
+- Quien da clase en A-201 los lunes?
+- Cual es el evento mas cercano en el calendario?
+- Cual es la disponibilidad de salas en tiempo real?
+
+================================================================================
+13. DEMO MVP ROBOT - TRES SALONES DEL EDIFICIO L
+================================================================================
+
+Despues de cargar 003_robot_demo_lab.sql tienes tres salones adicionales
+dentro del Edificio L, todos en el mismo piso y conectados por un sub-pasillo:
+
+  - Salon L-A Proyeccion        (L-A)  - proyector 4K, audio, capacidad 40
+  - Salon L-B Motion Capture    (L-B)  - sistema VICON 12 camaras, capacidad 15
+  - Salon L-C Computo           (L-C)  - 20 workstations RTX 4090, capacidad 20
+
+Horarios de clase (siempre maximo un salon ocupado):
+  L-A: Lunes          09:00 - 11:00  (Presentaciones y Seminarios)
+  L-B: Martes         10:00 - 12:00  (Lab Motion Capture)
+  L-C: Miercoles      14:00 - 16:00  (Computo Alto Rendimiento)
+
+Tiempos de ruta estimados desde el pasillo principal del Edificio L:
+  L-A: 35 segundos   (20s sub-pasillo + 15s hasta entrada)
+  L-B: 40 segundos   (20s sub-pasillo + 20s hasta entrada)
+  L-C: 45 segundos   (20s sub-pasillo + 25s hasta entrada)
+
+Descripcion de los salones
+- Cuales son los salones del Edificio L?
+- Que amenidades tiene el Salon L-A?
+- Que equipo tiene el Salon L-B?
+- Cuantas workstations hay en el Salon L-C?
+- Tienes camaras VICON? En donde?
+- Donde puedo hacer una defensa de tesis?
+- Donde hay un sistema de motion capture?
+- Donde puedo entrenar una red neuronal?
+- Cual salon del Edificio L tiene proyector 4K?
+
+Horarios y disponibilidad
+- A que hora hay clase en el Salon L-A?
+- Cuando esta ocupado el Salon L-B?
+- Que salon del Edificio L esta libre el jueves a las 10:00?
+- Cuando es la proxima clase de Motion Capture?
+- Hay algun mantenimiento programado en los salones del Edificio L?
+- A que hora puedo usar el Salon L-C sin clase?
+- Cual salon del Edificio L esta libre el lunes a las 14:00?
+
+Comparaciones
+- Cual salon tiene mas capacidad: L-A, L-B o L-C?
+- Que salon me recomiendas para una demo de robotica, L-B o L-C?
+- L-A o L-C, cual es mejor para una presentacion con datos?
+- Que salon tiene el equipo mas especializado?
+
+Rutas para el robot (nota: requiere agregar tool de ruteo al server)
+- Llévame del Salon L-A al Salon L-B.
+- Como llego del Salon L-C al Salon L-A?
+- Cuanto tardo en ir del Salon L-B al Salon L-C?
+- Llévame al Salon con camaras VICON.
+- Quiero ir al salon donde puedo entrenar modelos, por donde paso?
+
+Consultas combinadas (demo en vivo)
+- Estoy en el Salon L-A, quiero ir al L-C, pero antes necesito saber si
+  el L-C esta libre a las 15:00.
+- Necesito capturar movimiento con VICON y luego entrenar un modelo con
+  GPU, en ese orden. Que ruta tomo y que salones estan disponibles?
+- Cual es el salon del Edificio L mas adecuado para una demo de
+  presentacion + procesamiento en tiempo real?
+- Tengo clase en L-B a las 10:00, pero quiero llegar 15 min antes para
+  calibrar el VICON. A que hora salgo desde el pasillo principal del
+  Edificio L?
+
+================================================================================
+NOTAS
+================================================================================
+
+- El server MCP corre en http://localhost:8000/mcp
+- La DB escucha en localhost:5432 (user: campus_user, pass: campus_password)
+- Los tools son read-only (SET TRANSACTION READ ONLY esta activo)
+- Para ver embeddings reales habria que poblar la columna embedding con
+  pgvector (1536 dims); por ahora search_semantic_documents hace busqueda
+  lexica sobre title/content/metadata.
+- Para el demo del robot, considera agregar un tool de ruteo (Dijkstra)
+  en mcp-server/server.py que use navigation_edges y navigation_nodes
+  para devolver la secuencia de route_segments entre dos places.
